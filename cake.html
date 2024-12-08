@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layered Cake Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #fce4ec;
+            color: #ff4081;
+            text-align: center;
+            margin: 0;
+        }
+        h1 {
+            margin-top: 20px;
+        }
+        button {
+            background-color: #ff4081;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #d81b60;
+        }
+        #gameCanvas {
+            background-color: #fff;
+            border: 5px solid #ff80ab;
+            display: none;
+            margin: 20px auto;
+        }
+        #scoreDisplay {
+            font-size: 24px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen">
+        <h1>Welcome to the Layered Cake Game!</h1>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="scoreDisplay">Score: <span id="score">0</span></div>
+
+    <div id="gameOverScreen" style="display:none;">
+        <h1>Game Over!</h1>
+        <h2>Your Score: <span id="finalScore"></span></h2>
+        <h2>High Score: <span id="highScore"></span></h2>
+        <button onclick="restartGame()">Restart</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const startScreen = document.getElementById("startScreen");
+        const gameOverScreen = document.getElementById("gameOverScreen");
+        const scoreDisplay = document.getElementById("scoreDisplay");
+
+        let layers = [];
+        let currentLayer = { x: 150, y: 50, width: 100, height: 20, speed: 2, direction: 1 };
+        let baseLayerWidth = 100;
+        let score = 0;
+        let highScore = localStorage.getItem("cakeHighScore") || 0;
+
+        function startGame() {
+            startScreen.style.display = "none";
+            gameOverScreen.style.display = "none";
+            scoreDisplay.style.display = "block";
+            canvas.style.display = "block";
+            layers = [{ x: 150, y: 580, width: baseLayerWidth, height: 20 }];
+            currentLayer = { x: 150, y: 50, width: baseLayerWidth, height: 20, speed: 2, direction: 1 };
+            score = 0;
+            gameLoop();
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawLayers();
+            moveCurrentLayer();
+            drawCurrentLayer();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawLayers() {
+            ctx.fillStyle = "#ff80ab";
+            layers.forEach(layer => {
+                ctx.fillRect(layer.x, layer.y, layer.width, layer.height);
+            });
+        }
+
+        function moveCurrentLayer() {
+            currentLayer.x += currentLayer.speed * currentLayer.direction;
+            if (currentLayer.x <= 0 || currentLayer.x + currentLayer.width >= canvas.width) {
+                currentLayer.direction *= -1;
+            }
+        }
+
+        function drawCurrentLayer() {
+            ctx.fillStyle = "#ff4081";
+            ctx.fillRect(currentLayer.x, currentLayer.y, currentLayer.width, currentLayer.height);
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === " ") {
+                placeLayer();
+            }
+        });
+
+        function placeLayer() {
+            let previousLayer = layers[layers.length - 1];
+            if (currentLayer.x < previousLayer.x || currentLayer.x + currentLayer.width > previousLayer.x + previousLayer.width) {
+                currentLayer.width = Math.abs(previousLayer.x + previousLayer.width - currentLayer.x);
+                if (currentLayer.width <= 0) {
+                    endGame();
+                    return;
+                }
+            }
+            layers.push({ ...currentLayer });
+            score++;
+            document.getElementById("score").innerText = score;
+            currentLayer = { x: 150, y: 50, width: currentLayer.width, height: 20, speed: currentLayer.speed + 0.5, direction: 1 };
+        }
+
+        function endGame() {
+            canvas.style.display = "none";
+            scoreDisplay.style.display = "none";
+            gameOverScreen.style.display = "block";
+            document.getElementById("finalScore").innerText = score;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("cakeHighScore", highScore);
+            }
+            document.getElementById("highScore").innerText = highScore;
+        }
+
+        function restartGame() {
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>
